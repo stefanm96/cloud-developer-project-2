@@ -1,6 +1,9 @@
-import express from 'express';
+import express, { Request, Response, response } from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
+import { filter } from 'bluebird';
+import validator from 'validator';
+
 
 (async () => {
 
@@ -27,7 +30,21 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // RETURNS
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
-  /**************************************************************************** */
+  app.get("/filteredimage", async (req: Request, res: Response) => {
+        const image_url: string = req.query.image_url;
+
+        // validate the image_url query
+        if (!image_url || validator.isDataURI(image_url) ) {
+          return res.status(400).send("Query Parameter: 'image_url' must be a valid URL!")
+        }
+
+        // call filterImageFromURL(image_url) to filter the image
+        const path = await filterImageFromURL(image_url);
+        
+        // send the resulting file in the response
+        // deletes any files on the server on finish of the response
+        res.sendFile(path, () => deleteLocalFiles([path]))
+  });
 
   //! END @TODO1
   
